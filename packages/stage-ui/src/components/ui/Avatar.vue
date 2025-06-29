@@ -35,7 +35,7 @@ const initials = computed(() => {
 
 const backgroundColor = computed(() => {
   if (!props.name)
-    return 'bg-muted'
+    return 'bg-neutral-100'
   // 根据名字生成固定的背景色
   const colors = [
     'bg-red-500',
@@ -73,7 +73,7 @@ const backgroundColor = computed(() => {
     </div>
     <div
       v-if="isOnline"
-      class="border-background absolute bottom-0 right-0 h-3 w-3 border-2 rounded-full bg-green-500"
+      class="absolute bottom-0 right-0 h-3 w-3 border-2 border-background rounded-full bg-green-500"
     />
   </div>
 </template>

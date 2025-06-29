@@ -3,7 +3,6 @@ import type { CoreDialog, CoreMessage } from '@tg-search/core/types'
 
 import { useChatStore, useMessageStore, useWebsocketStore } from '@tg-search/stage'
 import { useScroll, useVirtualList } from '@vueuse/core'
-import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -17,19 +16,16 @@ const id = route.params.id
 
 const chatStore = useChatStore()
 const messageStore = useMessageStore()
-const { messagesByChat } = storeToRefs(messageStore)
-const chatMessagesMap = computed<Map<string, CoreMessage>>(() =>
-  messagesByChat.value.get(id.toString()) ?? new Map(),
-)
 const chatMessages = computed<CoreMessage[]>(() =>
-  Array.from(chatMessagesMap.value.values())
+  Array.from(messageStore.useMessageChatMap(id.toString()).values())
     .sort((a, b) =>
-      a.platformTimestamp <= b.platformTimestamp ? -1 : 1,
+      a.platformTimestamp - b.platformTimestamp,
     ),
 )
 const currentChat = computed<CoreDialog | undefined>(() =>
   chatStore.getChat(id.toString()),
 )
+
 const isGlobalSearch = ref(false)
 const searchDialogRef = ref<InstanceType<typeof SearchDialog> | null>(null)
 const isLoadingMessages = ref(false)
@@ -69,7 +65,7 @@ const messageInput = ref('')
 const { y } = useScroll(containerProps.ref)
 const lastMessagePosition = ref(0)
 
-watch(chatMessages, () => {
+watch(() => chatMessages.value.length, () => {
   lastMessagePosition.value = containerProps.ref.value?.scrollHeight ?? 0
 
   nextTick(() => {
@@ -161,8 +157,8 @@ const isGlobalSearchOpen = ref(false)
       >
         <template #settings>
           <div class="flex items-center">
-            <input id="searchContent" type="checkbox" class="border-border mr-1 rounded">
-            <label for="searchContent" class="text-foreground text-sm">搜索内容</label>
+            <input id="searchContent" type="checkbox" class="mr-1 border-border rounded">
+            <label for="searchContent" class="text-sm text-primary-900">搜索内容</label>
           </div>
         </template>
       </SearchDialog>

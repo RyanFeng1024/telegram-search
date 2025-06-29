@@ -1,7 +1,7 @@
 import type { UUID } from 'node:crypto'
 
 import type { CoreMessage, CoreRetrievalMessages } from '../../../../core/src/index'
-import type { chatMessagesTable } from '../../schema'
+import type { chatMessagesTable } from '../../schemas/chat_messages'
 
 export type DBInsertMessage = typeof chatMessagesTable.$inferInsert
 export type DBSelectMessage = typeof chatMessagesTable.$inferSelect
@@ -16,7 +16,7 @@ export function convertToCoreMessageFromDB(message: DBSelectMessage): CoreMessag
   return {
     uuid: message.id as UUID,
 
-    platform: message.platform,
+    platform: message.platform as 'telegram',
     platformMessageId: message.platform_message_id,
     chatId: message.in_chat_id,
 
