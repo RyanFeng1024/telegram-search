@@ -11,7 +11,7 @@ import { Api } from 'telegram'
 export interface CoreMessage {
   uuid: UUID
 
-  platform: string // Telegram
+  platform: 'telegram'
   platformMessageId: string
   chatId: string
 
@@ -32,9 +32,35 @@ export interface CoreMessage {
   deletedAt?: number
 }
 
+export type CoreMessageMediaTypes = 'photo' | 'sticker' | 'document' | 'webpage' | 'unknown'
+
 export interface CoreMessageMedia {
-  apiMedia: unknown // Api.TypeMessageMedia
-  data: string | Buffer<ArrayBufferLike> | undefined
+  type: CoreMessageMediaTypes
+  messageUUID?: UUID
+  path?: string
+  byte?: Buffer
+  blobUrl?: string
+  apiMedia?: unknown // Api.TypeMessageMedia
+}
+
+export function parseMediaType(apiMedia: Api.TypeMessageMedia): CoreMessageMediaTypes {
+  switch (true) {
+    case apiMedia instanceof Api.MessageMediaPhoto:
+      return 'photo'
+    case apiMedia instanceof Api.MessageMediaDocument:
+      // TODO: Better way to check if it's a sticker
+      if (apiMedia.document && apiMedia.document.className === 'Document') {
+        const isSticker = apiMedia.document.attributes.find((attr: any) => attr.className === 'DocumentAttributeSticker')
+        if (isSticker) {
+          return 'sticker'
+        }
+      }
+      return 'document'
+    case apiMedia instanceof Api.MessageMediaWebPage:
+      return 'webpage'
+    default:
+      return 'unknown'
+  }
 }
 
 export interface CoreMessageReply {
@@ -112,8 +138,8 @@ export function convertToCoreMessage(message: Api.Message): Result<CoreMessage> 
   const media: CoreMessageMedia[] = []
   if (message.media) {
     media.push({
+      type: parseMediaType(message.media),
       apiMedia: message.media,
-      data: undefined,
     })
   }
 

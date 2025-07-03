@@ -2,7 +2,7 @@ import type { Api } from 'telegram'
 
 import type { MessageResolver, MessageResolverOpts } from '.'
 import type { CoreContext } from '../context'
-import type { CoreMessage } from '../utils/message'
+import type { CoreMessage, CoreMessageMedia } from '../utils/message'
 
 import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync } from 'node:fs'
@@ -11,7 +11,6 @@ import { join } from 'node:path'
 
 import { useLogger } from '@tg-search/common'
 import { getMediaPath, useConfig } from '@tg-search/common/node'
-import { Ok } from '@tg-search/common/utils/monad'
 
 export function createMediaResolver(ctx: CoreContext): MessageResolver {
   const logger = useLogger('core:resolver:media')
@@ -30,47 +29,50 @@ export function createMediaResolver(ctx: CoreContext): MessageResolver {
   }
 
   return {
-    run: async (opts: MessageResolverOpts) => {
+    async* stream(opts: MessageResolverOpts) {
       logger.verbose('Executing media resolver')
 
-      const resolvedMessages = await Promise.all(
-        opts.messages.map(async (message) => {
-          if (!message.media || message.media.length === 0)
-            return message
+      for (const message of opts.messages) {
+        if (!message.media || message.media.length === 0) {
+          yield message
+          continue
+        }
 
-          const fetchedMedia = await Promise.all(
-            message.media.map(async (media) => {
-              logger.withFields({ media }).debug('Media')
+        const fetchedMedia = await Promise.all(
+          message.media.map(async (media) => {
+            logger.withFields({ media }).debug('Media')
 
-              const userMediaPath = join(await useUserMediaPath(), message.chatId.toString())
-              if (!existsSync(userMediaPath)) {
-                mkdirSync(userMediaPath, { recursive: true })
-              }
+            const userMediaPath = join(await useUserMediaPath(), message.chatId.toString())
+            if (!existsSync(userMediaPath)) {
+              mkdirSync(userMediaPath, { recursive: true })
+            }
 
-              const mediaFetched = await ctx.getClient().downloadMedia(media.apiMedia as Api.TypeMessageMedia)
+            const mediaFetched = await ctx.getClient().downloadMedia(media.apiMedia as Api.TypeMessageMedia)
 
-              const mediaPath = join(userMediaPath, message.platformMessageId)
-              logger.withFields({ mediaPath }).verbose('Media path')
-              if (mediaFetched instanceof Buffer) {
-                // write file to disk async
-                void writeFile(mediaPath, mediaFetched)
-              }
+            const mediaPath = join(userMediaPath, message.platformMessageId)
+            logger.withFields({ mediaPath }).verbose('Media path')
+            if (mediaFetched instanceof Buffer) {
+            // write file to disk async
+              void writeFile(mediaPath, mediaFetched)
+            }
 
-              return {
-                apiMedia: media.apiMedia,
-                data: mediaFetched,
-              }
-            }),
-          )
+            const byte = mediaFetched instanceof Buffer ? mediaFetched : undefined
 
-          return {
-            ...message,
-            media: fetchedMedia,
-          } satisfies CoreMessage
-        }),
-      )
+            return {
+              apiMedia: media.apiMedia,
+              byte,
+              type: media.type,
+              messageUUID: media.messageUUID,
+              path: mediaPath,
+            } satisfies CoreMessageMedia
+          }),
+        )
 
-      return Ok(resolvedMessages)
+        yield {
+          ...message,
+          media: fetchedMedia,
+        } satisfies CoreMessage
+      }
     },
   }
 }

@@ -6,6 +6,7 @@ words:
   - airi
   - Attributify
   - bumpp
+  - bytea
   - crossws
   - culori
   - defu
@@ -15,17 +16,20 @@ words:
   - gramsearch
   - guiiai
   - hahaqwq
+  - hnsw
   - iconify
   - jieba
   - listhen
   - Logg
   - lucide
   - luoling
+  - Megagroups
   - moeru
   - ofetch
   - oklch
   - ollama
   - onnotice
+  - overscan
   - pathe
   - pglite
   - pgvector
@@ -33,6 +37,7 @@ words:
   - reka
   - Retriable
   - rolldown
+  - Shadcn
   - sonner
   - taze
   - tiktoken

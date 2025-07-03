@@ -27,6 +27,41 @@ export const useMessageStore = defineStore('message', () => {
       const { chatId } = message
 
       const chatMap = useMessageChatMap(chatId)
+
+      function getMediaMimeType(mediaType: string): string {
+        switch (mediaType) {
+          case 'photo':
+            return 'image/jpeg'
+          case 'sticker':
+            // Telegram stickers are usually WebM or WebP
+            return 'video/webm'
+          case 'document':
+            return 'application/octet-stream'
+          default:
+            return 'application/octet-stream'
+        }
+      }
+
+      for (const media of message.media ?? []) {
+        if (media.byte) {
+          const buffer = new Uint8Array((media.byte as any).data)
+
+          const mimeType = getMediaMimeType(media.type)
+          const blob = new Blob([buffer], { type: mimeType })
+          const url = URL.createObjectURL(blob)
+          media.blobUrl = url
+
+          // eslint-disable-next-line no-console
+          console.log('[MessageStore] Blob URL created:', {
+            url,
+            mimeType,
+            blobSize: blob.size,
+          })
+
+          media.byte = undefined
+        }
+      }
+
       chatMap.set(message.platformMessageId, message)
     })
   }
@@ -63,6 +98,7 @@ export const useMessageStore = defineStore('message', () => {
   return {
     messagesByChat,
     pushMessages,
+    useMessageChatMap,
     fetchMessagesWithDatabase,
   }
 })

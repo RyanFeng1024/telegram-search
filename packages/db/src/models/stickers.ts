@@ -4,15 +4,16 @@ import { Ok } from '@tg-search/common/utils/monad'
 import { desc, eq } from 'drizzle-orm'
 
 import { withDb } from '../drizzle'
-import { recentSentStickersTable, stickersTable } from '../schema'
+import { recentSentStickersTable } from '../schemas/recent_sent_stickers'
+import { stickersTable } from '../schemas/stickers'
 
 export async function findStickerDescription(fileId: string) {
-  const sticker = await findStickerByFileId(fileId)
+  const sticker = (await findStickerByFileId(fileId))?.unwrap()
   if (sticker == null) {
     return ''
   }
 
-  return sticker.description
+  return Ok(sticker.description)
 }
 
 export async function findStickerByFileId(fileId: string) {
@@ -27,11 +28,11 @@ export async function findStickerByFileId(fileId: string) {
     return undefined
   }
 
-  return sticker[0]
+  return Ok(sticker[0])
 }
 
 export async function recordSticker(stickerBase64: string, fileId: string, filePath: string, description: string, name: string, emoji: string, label: string) {
-  (await withDb(async db => Ok(await db
+  return withDb(async db => db
     .insert(stickersTable)
     .values({
       platform: 'telegram',
@@ -42,14 +43,15 @@ export async function recordSticker(stickerBase64: string, fileId: string, fileP
       name,
       emoji,
       label,
-    })),
-  )).expect('Failed to record sticker')
+    })
+    .returning(),
+  )
 }
 
 export async function listRecentSentStickers() {
-  return (await withDb(db => db
+  return withDb(db => db
     .select()
     .from(recentSentStickersTable)
     .orderBy(desc(recentSentStickersTable.created_at)),
-  )).expect('Failed to list recent sent stickers')
+  )
 }

@@ -1,7 +1,7 @@
 import type { UUID } from 'node:crypto'
 
 import type { CoreMessage, CoreRetrievalMessages } from '../../../../core/src/index'
-import type { chatMessagesTable } from '../../schema'
+import type { chatMessagesTable } from '../../schemas/chat_messages'
 
 export type DBInsertMessage = typeof chatMessagesTable.$inferInsert
 export type DBSelectMessage = typeof chatMessagesTable.$inferSelect
@@ -16,7 +16,7 @@ export function convertToCoreMessageFromDB(message: DBSelectMessage): CoreMessag
   return {
     uuid: message.id as UUID,
 
-    platform: message.platform,
+    platform: message.platform as 'telegram',
     platformMessageId: message.platform_message_id,
     chatId: message.in_chat_id,
 
@@ -62,9 +62,9 @@ export function convertToDBInsertMessage(message: CoreMessage): DBInsertMessage 
     is_reply: message.reply.isReply,
     reply_to_name: message.reply.replyToName,
     reply_to_id: message.reply.replyToId,
-    content_vector_1536: message.vectors.vector1536?.length !== 0 ? message.vectors.vector1536 : null,
-    content_vector_1024: message.vectors.vector1024?.length !== 0 ? message.vectors.vector1024 : null,
-    content_vector_768: message.vectors.vector768?.length !== 0 ? message.vectors.vector768 : null,
+    content_vector_1536: message.vectors.vector1536?.length ? message.vectors.vector1536 : null,
+    content_vector_1024: message.vectors.vector1024?.length ? message.vectors.vector1024 : null,
+    content_vector_768: message.vectors.vector768?.length ? message.vectors.vector768 : null,
     jieba_tokens: message.jiebaTokens,
     platform_timestamp: message.platformTimestamp,
   } satisfies DBInsertMessage
