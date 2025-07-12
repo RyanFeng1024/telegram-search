@@ -11,7 +11,7 @@ import type { MessageEventFromCore, MessageEventToCore } from './services/messag
 import type { StorageEventFromCore, StorageEventToCore } from './services/storage'
 import type { TakeoutEventFromCore, TakeoutEventToCore } from './services/takeout'
 
-import { useLogger } from '@tg-search/common'
+import { useLogger } from '@tg-search/logg'
 import { EventEmitter } from 'eventemitter3'
 import { Api } from 'telegram'
 import { FloodWaitError } from 'telegram/errors'
@@ -137,11 +137,11 @@ export function createCoreContext() {
   }
 
   wrapEmitterOn(emitter, (event) => {
-    useLogger('core:event').withFields({ event }).log('Core event received')
+    useLogger('core:event').withFields({ event }).debug('Core event received')
   })
 
   wrapEmitterEmit(emitter, (event) => {
-    useLogger('core:event').withFields({ event }).log('Core event emitted')
+    useLogger('core:event').withFields({ event }).debug('Core event emitted')
   })
 
   return {

@@ -6,7 +6,7 @@ database:
   # Can use URL or separate field configuration
   # url: postgres://postgres:postgres@localhost:5432/tg_search
   host: localhost
-  port: 5432
+  port: 5433
   user: postgres
   password: '123456'
   database: postgres
@@ -40,6 +40,7 @@ api:
     # Get these values from https://my.telegram.org/apps
     apiId: '611335'
     apiHash: d524b414d21f4d37f08684c1df41ac9c
+    receiveMessage: false
     # Optional proxy settings
     # proxy:
     #   ip: ''            # Proxy host (IP or hostname)

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useAuthStore } from '@tg-search/stage'
+import { useAuthStore } from '@tg-search/client'
 import { onClickOutside } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed, useTemplateRef } from 'vue'
@@ -33,22 +33,22 @@ const userId = computed(() => activeSessionComputed.value?.me?.id)
   <div
     v-if="isOpen"
     ref="dropdownRef"
-    class="bg-popover absolute left-0 top-full z-10 mt-2 min-w-[200px] border rounded-md p-2 shadow-lg"
+    class="absolute left-0 top-full z-10 mt-2 min-w-[200px] border border-border rounded-md bg-popover p-2 shadow-lg dark:border-gray-600 dark:bg-gray-800"
   >
-    <div class="flex items-center gap-3 border-b p-3">
+    <div class="flex items-center gap-3 border-b p-3 dark:border-gray-600">
       <Avatar
         :name="username"
         size="md"
       />
       <div class="flex flex-col">
-        <span class="text-foreground text-sm font-medium">{{ username }}</span>
-        <span class="text-secondary-foreground text-xs">ID: {{ userId }}</span>
+        <span class="text-sm text-primary-900 font-medium dark:text-gray-100">{{ username }}</span>
+        <span class="text-xs text-complementary-600 dark:text-gray-400">ID: {{ userId }}</span>
       </div>
     </div>
 
     <div class="mt-2">
       <button
-        class="text-foreground hover:bg-muted w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm"
+        class="w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm text-primary-900 hover:bg-neutral-100 dark:text-gray-100 dark:hover:bg-gray-700"
         @click="handleLoginLogout"
       >
         <div :class="isLoggedIn ? 'i-lucide-log-out' : 'i-lucide-log-in'" class="h-4 w-4" />

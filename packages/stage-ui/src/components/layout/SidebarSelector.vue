@@ -7,6 +7,7 @@ const props = defineProps<{
   icon: string
   name: string
 }>()
+
 const router = useRouter()
 const route = useRoute()
 
@@ -15,14 +16,14 @@ const isCurrentPage = computed(() => route.path === props.path)
 
 <template>
   <div
-    :class="{ 'bg-muted dark:bg-muted': isCurrentPage }"
-    class="hover:bg-muted dark:hover:bg-muted px-4 transition-colors"
+    :class="{ 'bg-neutral-100 dark:bg-gray-700': isCurrentPage }"
+    class="px-4 text-primary-900 transition-colors hover:bg-neutral-100 dark:text-gray-100 dark:hover:bg-gray-700"
     @click="router.push(props.path)"
   >
     <div
       class="w-full flex cursor-pointer items-center gap-4 p-2"
     >
-      <span :class="icon" class="h-5 w-5" />
+      <span :class="icon" class="h-5 w-5 flex-shrink-0" />
       <span>{{ name }}</span>
     </div>
   </div>

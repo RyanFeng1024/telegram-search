@@ -2,7 +2,7 @@ import type { Config } from '@tg-search/common'
 
 import type { CoreContext } from './context'
 
-import { useLogger } from '@tg-search/common'
+import { useLogger } from '@tg-search/logg'
 
 import { useService } from './context'
 import { registerAuthEventHandlers } from './event-handlers/auth'
@@ -65,11 +65,11 @@ export function afterConnectedEventHandler(
     const entityService = useService(ctx, createEntityService)
     const gramEventsService = useService(ctx, createGramEventsService)
 
-    registry.register('embedding', createEmbeddingResolver())
-    registry.register('link', createLinkResolver())
-    registry.register('user', createUserResolver(ctx))
-    registry.register('jieba', createJiebaResolver())
     registry.register('media', createMediaResolver(ctx))
+    registry.register('user', createUserResolver(ctx))
+    registry.register('link', createLinkResolver())
+    registry.register('embedding', createEmbeddingResolver())
+    registry.register('jieba', createJiebaResolver())
 
     registerMessageEventHandlers(ctx)(messageService)
     registerDialogEventHandlers(ctx)(dialogService)

@@ -5,12 +5,12 @@ import type { DBRetrievalMessages } from './message'
 import { existsSync, readFileSync } from 'node:fs'
 
 import { Jieba } from '@node-rs/jieba'
-import { useLogger } from '@tg-search/common'
 import { useConfig } from '@tg-search/common/node'
+import { useLogger } from '@tg-search/logg'
 import { and, eq, sql } from 'drizzle-orm'
 
 import { withDb } from '../../drizzle'
-import { chatMessagesTable } from '../../schema'
+import { chatMessagesTable } from '../../schemas/chat_messages'
 
 let jieba: Jieba | undefined
 

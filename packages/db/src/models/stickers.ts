@@ -1,18 +1,22 @@
 // https://github.com/moeru-ai/airi/blob/main/services/telegram-bot/src/models/stickers.ts
 
-import { Ok } from '@tg-search/common/utils/monad'
-import { desc, eq } from 'drizzle-orm'
+import type { CoreMessageMediaSticker } from '../../../core/src'
+
+import { Ok } from '@tg-search/result'
+import { desc, eq, sql } from 'drizzle-orm'
 
 import { withDb } from '../drizzle'
-import { recentSentStickersTable, stickersTable } from '../schema'
+import { recentSentStickersTable } from '../schemas/recent_sent_stickers'
+import { stickersTable } from '../schemas/stickers'
+import { must0 } from './utils/must'
 
 export async function findStickerDescription(fileId: string) {
-  const sticker = await findStickerByFileId(fileId)
+  const sticker = (await findStickerByFileId(fileId))?.unwrap()
   if (sticker == null) {
     return ''
   }
 
-  return sticker.description
+  return Ok(sticker.description)
 }
 
 export async function findStickerByFileId(fileId: string) {
@@ -23,33 +27,46 @@ export async function findStickerByFileId(fileId: string) {
     .limit(1),
   )).expect('Failed to find sticker by file ID')
 
-  if (sticker.length === 0) {
-    return undefined
-  }
-
-  return sticker[0]
+  return Ok(must0(sticker))
 }
 
-export async function recordSticker(stickerBase64: string, fileId: string, filePath: string, description: string, name: string, emoji: string, label: string) {
-  (await withDb(async db => Ok(await db
-    .insert(stickersTable)
-    .values({
+export async function recordStickers(stickers: CoreMessageMediaSticker[]) {
+  if (stickers.length === 0) {
+    return
+  }
+
+  // 对贴纸数组进行去重，以 file_id 为唯一标识
+  const uniqueStickers = stickers.filter((sticker, index, self) =>
+    index === self.findIndex(s => s.platformId === sticker.platformId),
+  )
+
+  const dataToInsert = uniqueStickers
+    .filter(sticker => sticker.byte != null)
+    .map(sticker => ({
       platform: 'telegram',
-      file_id: fileId,
-      image_base64: stickerBase64,
-      image_path: filePath,
-      description,
-      name,
-      emoji,
-      label,
-    })),
-  )).expect('Failed to record sticker')
+      file_id: sticker.platformId ?? '',
+      sticker_bytes: sticker.byte,
+    // TODO: Emoji
+    }))
+
+  return withDb(async db => db
+    .insert(stickersTable)
+    .values(dataToInsert)
+    .onConflictDoUpdate({
+      target: [stickersTable.platform, stickersTable.file_id],
+      set: {
+        sticker_bytes: sql`excluded.sticker_bytes`,
+        updated_at: Date.now(),
+      },
+    })
+    .returning(),
+  )
 }
 
 export async function listRecentSentStickers() {
-  return (await withDb(db => db
+  return withDb(db => db
     .select()
     .from(recentSentStickersTable)
     .orderBy(desc(recentSentStickersTable.created_at)),
-  )).expect('Failed to list recent sent stickers')
+  )
 }

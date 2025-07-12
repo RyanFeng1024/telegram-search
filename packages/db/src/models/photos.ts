@@ -1,43 +1,72 @@
 // https://github.com/moeru-ai/airi/blob/main/services/telegram-bot/src/models/photos.ts
 
-import { Ok } from '@tg-search/common/utils/monad'
-import { eq, inArray } from 'drizzle-orm'
+import type { CoreMessageMediaPhoto } from '../../../core/src'
+import type { DBInsertPhoto } from './utils/photos'
+
+import { Ok } from '@tg-search/result'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import { withDb } from '../drizzle'
-import { photosTable } from '../schema'
+import { photosTable } from '../schemas/photos'
+import { must0 } from './utils/must'
 
-export async function findPhotoDescription(fileId: string) {
-  const photo = (await withDb(db => db
+export async function findPhotoByFileId(fileId: string) {
+  const photos = (await withDb(db => db
     .select()
     .from(photosTable)
-    .where(eq(photosTable.file_id, fileId))
-    .limit(1),
-  )).expect('Failed to find photo description')
+    .where(
+      and(
+        eq(photosTable.platform, 'telegram'),
+        eq(photosTable.file_id, fileId),
+      ),
+    ),
+  )).expect('Failed to find photos by file ID')
 
-  if (photo.length === 0) {
-    return ''
+  return Ok(must0(photos))
+}
+
+export async function recordPhotos(media: CoreMessageMediaPhoto[]) {
+  if (media.length === 0) {
+    return
   }
 
-  return photo[0].description
-}
+  const dataToInsert = media
+    .filter(media => media.byte != null)
+    .map(
+      media => ({
+        platform: 'telegram',
+        file_id: media.platformId,
+        message_id: media.messageUUID,
+        image_bytes: media.byte,
+      } satisfies DBInsertPhoto),
+    )
 
-export async function recordPhoto(photoBase64: string, fileId: string, filePath: string, description: string) {
-  (await withDb(async db => Ok(await db
+  return withDb(async db => db
     .insert(photosTable)
-    .values({
-      platform: 'telegram',
-      file_id: fileId,
-      image_base64: photoBase64,
-      image_path: filePath,
-      description,
-    })),
-  )).expect('Failed to record photo')
+    .values(dataToInsert)
+    .onConflictDoUpdate({
+      target: [photosTable.platform, photosTable.file_id],
+      set: {
+        image_bytes: sql`excluded.image_bytes`,
+        updated_at: Date.now(),
+      },
+    })
+    .returning(),
+  )
 }
 
-export async function findPhotosDescriptions(fileIds: string[]) {
-  return (await withDb(db => db
+export async function findPhotosByMessageId(messageUUID: string) {
+  return withDb(db => db
     .select()
     .from(photosTable)
-    .where(inArray(photosTable.file_id, fileIds)),
-  )).expect('Failed to find photos descriptions')
+    .where(eq(photosTable.message_id, messageUUID)),
+  )
+}
+
+export async function findPhotosByMessageIds(messageUUIDs: string[]) {
+  return withDb(db => db
+    .select()
+    .from(photosTable)
+    .where(inArray(photosTable.message_id, messageUUIDs)),
+  )
 }

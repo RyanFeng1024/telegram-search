@@ -6,8 +6,8 @@ import type { App } from 'h3'
 
 import type { WsEventToClientData, WsMessageToServer } from './ws-event'
 
-import { useLogger } from '@tg-search/common'
 import { createCoreInstance } from '@tg-search/core'
+import { useLogger } from '@tg-search/logg'
 import { defineWebSocketHandler } from 'h3'
 
 import { sendWsEvent } from './ws-event'
@@ -102,7 +102,7 @@ export function setupWsRoutes(app: App) {
             const eventName = event.data.event as keyof FromCoreEvent
 
             const fn = (data: WsEventToClientData<keyof FromCoreEvent>) => {
-              logger.withFields({ eventName }).log('Sending event to client')
+              logger.withFields({ eventName }).debug('Sending event to client')
               sendWsEvent(peer, eventName, data)
             }
 
